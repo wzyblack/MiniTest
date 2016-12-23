@@ -1,0 +1,20 @@
+[
+	{
+		id:"0",
+		text:"在线学习",
+		expanded: false,
+		iconCls:"icon-add"
+	},
+	{
+		id:"ajax/courseInfo.html",
+		text:"课程信息表",
+		pid:"0",
+		iconCls:"icon-add"
+	},
+	{
+		id:"ajax/chooseCourse.html",
+		text:"选课信息表",
+		pid:"0",
+		iconCls:"icon-add"
+	}
+]

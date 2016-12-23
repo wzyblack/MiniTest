@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Insert title here</title>
+		<link rel="stylesheet" type="text/css" href="css/demo.css"/>
+		<script src="scripts/boot.js" type="text/javascript"></script>
+		<style type="text/css">
+		    html, body{
+		        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+		    }
+		</style>
+	</head>
+	<body>
+		<div>
+		<form id="addCourse" method="post">
+		<fieldset style="border: solid 1px #aaa; padding: 3px; width: 800px;">
+			<legend>基本信息</legend>
+			<div style="padding-left:11px;padding-bottom:5px;">
+				<table style="table-layout:fixed;">
+					<tr>
+						<td>课程编号</td>
+						<td>
+							<input name="id" id="id" errorMode="none" onvalidation="carNumvalidation" class="mini-textbox"
+								allowInput="false" enabled="false" textField="id" valueField="id" required="true" requiredErrorText="不能为空"/>
+						</td>
+						<td id="id_error" class="errorText" style="color:red;"></td>
+						<td>课程名</td>
+						<td>
+							<input class="mini-textbox" name="courseName" id="courseName" errorMode="none" onvalidation="courseNamevalidation"
+								 textField="courseName" valueField="id"  required="true" requiredErrorText="不能为空"/>
+						</td>
+						<td id="courseName_error" class="errorText" style="color: red"></td>
+					</tr>
+					<tr>
+						<td>开课时间</td>
+						<td><input name="startTime" id="startTime" errorMode="none" onvalidation="startTimevalidation" format="yyyy-MM-dd HH:mm:ss"
+								onDrawDate="onDrawDate" class="mini-datepicker" required="true" showTime="true" requiredErrorText="不能为空"/>
+						</td>
+						<td id="startTime_error" class="errorText" style="color:red;" width="80"></td>
+					
+						<td>适合人群</td>
+						<td>
+						<select name="suitable" id="suitable" errorMode="none"  name="gender" class="mini-radiobuttonlist" value="1"
+							url="json/suit.json" textField="text" idField="id" required="true" requiredErrorText="不能为空">
+	                        <!-- <option value="1">男</option>
+	                        <option value="2">女</option> -->
+                    	</select>
+						<!-- <input name="suitable" id="suitable" errorMode="none" onvalidation="suitablevalidation"
+								url="json/suit.json" textField="text" idField="id" class="mini-combobox" required="true" requiredErrorText="不能为空"/> -->
+						</td>
+						<td id="driver_error" class="errorText" style="color:red;"  width="80"></td>
+					</tr>
+					<tr>
+						<td>课程分类</td>
+						<td><input name="type" id="type" errorMode="none" onvalidation="typevalidation"
+								url="json/courseName.json" valueField="id" textField="text" class="mini-combobox" required="true" requiredErrorText="不能为空"/>
+						</td>
+						<td id="type_error" class="errorText" style="color:red;"></td>
+					</tr>
+					<tr>
+						<td>总学时</td>
+						<td>
+							<input name="totalHouse" id="totalHouse" errorMode="none" onvalidation="totalHousevalidation"
+								 class="mini-textbox" required="true"  requiredErrorText="不能为空"/>
+						</td>
+						<td id="totalHouse_error" class="errorText" style="color:red;"></td>
+						<td></td>
+						<td></td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>其他说明</td>
+						<td colspan="5">
+							<input name="note" id="note"
+								 class="mini-textarea" height="50" width="430"/>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="3" style="text-align: center;">
+							<input class="mini-button" text="添加" onclick="add" />
+							<input class="mini-button" text="取消" onclick="CloseWindow(close)" />
+						</td>
+					</tr>
+				</table>
+			</div>
+		</fieldset>
+		</form>
+		</div>
+	</body>
+	<script type="text/javascript">
+		mini.parse();
+		var form1 = new mini.Form("#addCourse");
+		function SetData(data) {
+           //跨页面传递的数据对象，克隆后才可以安全使用
+           data = mini.clone(data);
+           $.ajax({
+               url: "getCourseNum.action",
+               cache: false,
+               success: function (text) {
+            	   //alert(text);
+                   var o = mini.decode(text);
+                   form1.setData(o);
+                   form1.setChanged(false);
+                   
+               }
+           });
+        }
+		function add(){
+			var form = new mini.Form("#addCourse");
+			
+			var useCar = form.getData();
+			form.validate();
+			 if (form.isValid() == false) 
+	            	return;
+	         var json = mini.encode([useCar]);
+	         $.ajax({
+                url: "addCourse.action",
+				type: 'post',
+                data: { course: json },
+                cache: false,
+                success: function (text) {
+                	mini.alert(text,"提示信息",function(){
+ 						CloseWindow("ok");
+ 					});
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert(jqXHR.responseText);
+                    CloseWindow();
+                }
+	    	});
+		}
+		//验证
+		
+		function carNumvalidation(e){
+			showError(e);
+		}
+		function courseNamevalidation(e){
+			showError(e);
+		}
+		function startTimevalidation(e){
+			showError(e);
+		}
+		function suitablevalidation(e){
+			showError(e);
+		}
+		function typevalidation(e){
+			showError(e);
+		}
+		function totalHousevalidation(e){
+			showError(e);
+		}
+		function showError(e) {
+		  var id = e.sender.name + "_error";
+		  var el = document.getElementById(id);
+		  if (el) {
+		      el.innerHTML = e.errorText;
+		     
+		  }
+		}
+		function onDrawDate(e){
+			var date = e.date;
+		 	var d = new Date();
+		 	if (date.getTime() < d.getTime()-12*60*60*1000) {
+		    	e.allowSelect = false;
+		 	}	
+		}
+		
+		function CloseWindow(action) {            
+			if (action == "close" && form.isChanged()) {
+				if (confirm("数据被修改了，是否先保存？")) {
+				    return false;
+				}
+			}
+			if (window.CloseOwnerWindow) 
+				return window.CloseOwnerWindow(action);
+			else window.close();            
+		}
+	</script>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Insert title here</title>
+		<link rel="stylesheet" type="text/css" href="../css/demo.css"/>
+		<script src="../scripts/boot.js" type="text/javascript"></script>
+		<style type="text/css">
+		    html, body{
+		        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+		    }
+		</style>
+	</head>
+	<body>
+		<div style="width:700px;margin-left:7px;margin-top: 5px;">
+			<div class="mini-toolbar">
+			<table style="width:100%">
+				<tbody>
+				<tr>
+					<td style="width:100%">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">增加</a>
+						<!-- <a class="mini-button" iconCls="icon-edit" onclick="edit()">修改</a> -->
+						<a class="mini-button" iconCls="icon-remove" onclick="del()">删除</a>
+					</td>
+					<td style="white-space: nowrap;">
+						<input id="actualHours" name="actualHours" width="60" class="mini-textbox" onenter="onKeyEnter"/>学习课时
+                        <input id="courseId" name="courseId" valueField="id" textField="courseName" width="90"
+								errorMode="none" url="../courseNames.action" class="mini-combobox" /><span>课程名称</span>
+                        <a class="mini-button" onclick="search()"  iconCls="icon-search">查询</a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+			</div>
+			<div id="Subscribed" class="mini-datagrid" style="width:100%;height:320px" allowResize="true"
+			 pageSize="5" url="../ChooseCourse.action"  idField="id" multiSelect="true" >
+				<div property="columns">
+					<div type="checkcolumn"></div>
+					<div type="indexcolumn" headerAlign="center" align="center" width="40" style="text-align: center;">序号</div>
+					<div field="salaryId" type="hidden" headerAlign="center" align="center" width="120">选课编号</div>
+					<div field="courseId" headerAlign="center" align="center" width="120" >课程编号</div>
+					<div field="courseName" headerAlign="center" align="center" width="120">课程名</div>
+					<div field="startTime" headerAlign="center" align="center" width="100" dateFormat="yyyy-MM-dd HH:mm:ss">开课时间</div>
+					<div field="endTime" headerAlign="center" align="center" width="80"  dateFormat="yyyy-MM-dd HH:mm:ss">结束时间</div>
+					<div field="actualHours" headerAlign="center" align="center" width="80" renderer="onShowType">学习时间</div>
+					<div name="action" width="80" headerAlign="center" align="center" renderer="onActionRenderer"
+					 cellStyle="padding:0;">操作</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		mini.parse();
+		var Subscribed = mini.get("Subscribed");
+		Subscribed.load();
+		
+		//将操作改成中文
+	 	function onActionRenderer(e) {
+			var grid = e.sender;
+			var record = e.record;
+			var uid = record._uid;
+			var rowIndex = e.rowIndex;
+	
+			var s = '<a class="Delete_Button" href="javascript:delRow(\'' + uid
+					+ '\')">删除</a>';
+			return s;
+	
+		}
+		/*var suitableJson = [{
+			"id" : "1",
+	 		"text" : "初级"
+			},
+			{
+				"id":"2",
+				"text":"中级"
+			},
+			{
+				"id":"3",
+				"text":"高级"
+			}
+		];
+		function onShowsuit(e){
+			for(var i = 0; i < suitableJson.length; i++){
+				var suit = suitableJson[i];
+				if(suit.id == e.value){
+					return suit.text;
+				}
+			}
+			return "";
+		}
+		var typeJson = [
+		    {
+		    	"id":"1",
+		    	"text":"C#"
+		    },
+		    {
+		    	"id":"2",
+		    	"text":"Java"
+		    },
+		    {
+		    	"id":"3",
+		    	"text":"C++"
+		    }
+		];
+		function onShowType(e){
+			for(var i = 0; i < typeJson.length; i++){
+				var type = typeJson[i];
+				if(type.id==e.value){
+					return type.text;
+				}
+			}
+			return "";
+		}
+		*/
+		function onKeyEnter(e) {
+	        search();
+	    }
+		
+		function search(){
+			var actualHours = mini.get("actualHours").getValue();
+			var tests = /^\d{+}$/;
+			if(actualHours !=""){
+				if(!tests.test(actualHours)){
+					mini.alert("必须输入数字","提示信息",function(){
+						
+					});
+					return;
+				}
+			}
+			var courseName = mini.get("courseName").getValue();
+			Subscribed.load({actualHours:actualHours,courseName:courseName});
+		}
+		//删除一行
+		function delRow(uId){
+			var row = Subscribed.getRowByUID(uId);
+			var id = row.salaryId;
+			if(confirm("确定删除选中记录？")){
+				$.ajax({
+					url : "../deleteChooseCourse.action",
+					type : "post",
+					data : {
+						salaryIDs : id
+					},
+					success : function(text) {
+	 					mini.alert(text,"提示信息",function(){
+	 						CloseWindow("ok");
+	 					})
+						Subscribed.load();
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						mini.alert(jqXHR.responseText);
+					}
+				});
+			}
+		}
+		//批量删除
+		function del(){
+			var rows = Subscribed.getSelecteds();
+			if(rows.length>0){
+				var courseId = [];
+				for(var i = 0; i < rows.length; i++){
+					var r = rows[i];
+					//alert(r.id);
+					courseId.push(r.salaryId);
+				}
+				if(confirm("确定删除选中记录？")){
+					var salaryID = courseId.join(",");
+					//alert(courseId);
+					$.ajax({
+						url : "../deleteChooseCourse.action",
+						type : "post",
+						data : {
+							salaryIDs : salaryID
+						},
+						//grid.loading("操作中，请稍后......"),
+						success : function(text) {
+		 					mini.alert(text,"提示信息",function(){
+		 						CloseWindow("ok");
+		 					})
+							Subscribed.load();
+						},
+						error : function(jqXHR, textStatus, errorThrown) {
+							mini.alert(jqXHR.responseText);
+						}
+					});
+				}
+			}
+			else{
+				alert("请选择一条记录");
+			}
+		}
+		
+		function add(){
+			mini.open({
+				url : "addChooseCourse.html", //页面地址
+				title : "新增课程信息", //标题
+				iconCls : "icon-add", //标题图标
+				width : "650px", //宽度
+				height : "300px", //高度
+				allowResize : true, //允许尺寸调节
+				allowDrag : true, //允许拖拽位置
+				showCloseButton : true, //显示关闭按钮
+				//showMaxButton: Boolean,     //显示最大化按钮
+				showModal : true, //显示遮罩
+				onload: function () {
+                    var iframe = this.getIFrameEl();
+                    var data = { action: "add"};
+                    iframe.contentWindow.SetData(data);
+                    
+                },
+				ondestroy : function(action) { //弹出页面关闭前		
+					//CloseWindow("ok");
+					Subscribed.reload();
+				}
+			});
+		}
+		function CloseWindow(action) {
+			if (action == "close" && form.isChanged()) {
+				if (confirm("数据被修改了，是否先保存？")) {
+					return false;
+				}
+			}
+			if (window.CloseOwnerWindow)
+				return window.CloseOwnerWindow(action);
+			else
+				window.close();
+		}
+	</script>
+</html>
