@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Insert title here</title>
+		<link rel="stylesheet" type="text/css" href="../css/demo.css"/>
+		<script src="../scripts/boot.js" type="text/javascript"></script>
+		<style type="text/css">
+		    html, body{
+		        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+		    }
+		    .myrow{
+		        background:#fceee2;
+		    }
+		</style>
+	</head>
+	<body>
+		<div style="width:700px;margin-left:7px;margin-top: 5px;">
+			<div class="mini-toolbar">
+			<table style="width:100%">
+				<tbody>
+				<tr>
+					<td style="width:100%">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">增加</a>
+						<!-- <a class="mini-button" iconCls="icon-edit" onclick="edit()">修改</a> -->
+						<a class="mini-button" iconCls="icon-remove" onclick="del()">删除</a>
+					</td>
+					<td style="white-space: nowrap;">
+						<input id="courseName" name="courseName" class="mini-textbox" onenter="onKeyEnter"/>   
+                        <input id="type" name="type" class="mini-combobox"  style="width:60px;"
+                        	valueField="id" textField="text" url="../json/courseName.json" onenter="onKeyEnter"/>
+                        <a class="mini-button" onclick="search()"  iconCls="icon-search">查询</a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+			</div>
+			<div id="courses" class="mini-datagrid" style="width:100%;height:320px" allowResize="true"
+			 pageSize="5" url="../courseInfos.action"  idField="id" multiSelect="true" >
+				<div property="columns">
+					<div type="checkcolumn"></div>
+					<div type="indexcolumn" headerAlign="center" align="center" width="40" style="text-align: center;">序号</div>
+					<div field="id" headerAlign="center" align="center" width="120" >课程编号</div>
+					<div field="courseName" headerAlign="center" align="center" width="120">课程名</div>
+					<div field="startTime" headerAlign="center" align="center" width="100" dateFormat="yyyy-MM-dd">开课时间</div>
+					<div field="suitable" headerAlign="center" align="center" width="80" renderer="onShowsuit">适合人群</div>
+					<div field="type" headerAlign="center" align="center" width="80" renderer="onShowType">课程分类</div>
+					<div field="totalHouse" headerAlign="center" align="center" width="80">总课时</div>
+					<div field="hotLevel" width="100"headerAlign="center" align="center">热门程度</div>
+					<div field="note" width="100" headerAlign="center" align="center">说明</div>
+					<div name="action" width="80" headerAlign="center" align="center" renderer="onActionRenderer"
+					 cellStyle="padding:0;">操作</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		mini.parse();
+		var courses = mini.get("courses");
+		courses.load();
+		
+		//将操作改成中文
+	 	function onActionRenderer(e) {
+			var grid = e.sender;
+			var record = e.record;
+			var uid = record._uid;
+			var rowIndex = e.rowIndex;
+	
+			var s = '<a class="Edit_Button" href="javascript:edit(\'' + uid
+					+ '\')">修改</a>' + '&nbsp;&nbsp;'
+					+ '<a class="Delete_Button" href="javascript:delRow(\'' + uid
+					+ '\')">删除</a>';
+			return s;
+	
+		}
+		var suitableJson = [{
+			"id" : "1",
+	 		"text" : "初级"
+			},
+			{
+				"id":"2",
+				"text":"中级"
+			},
+			{
+				"id":"3",
+				"text":"高级"
+			}
+		];
+		courses.on("drawcell", function (e) {
+			var column = e.column;
+			var value = e.value;
+			//alert(value);
+			if(column.field == "hotLevel" && value > 0){
+				e.rowCls = "myrow";
+			}
+		});
+		function onShowsuit(e){
+			for(var i = 0; i < suitableJson.length; i++){
+				var suit = suitableJson[i];
+				if(suit.id == e.value){
+					return suit.text;
+				}
+			}
+			return "";
+		}
+		var typeJson = [
+		    {
+		    	"id":"1",
+		    	"text":"C#"
+		    },
+		    {
+		    	"id":"2",
+		    	"text":"Java"
+		    },
+		    {
+		    	"id":"3",
+		    	"text":"C++"
+		    }
+		];
+		function onShowType(e){
+			for(var i = 0; i < typeJson.length; i++){
+				var type = typeJson[i];
+				if(type.id==e.value){
+					return type.text;
+				}
+			}
+			return "";
+		}
+		
+		function onKeyEnter(e) {
+	        search();
+	    }
+		
+		function search(){
+			var type = mini.get("type").getValue();
+			var courseName = mini.get("courseName").getValue();
+			courses.load({type:type,courseName:courseName});
+		}
+		//删除一行
+		function delRow(uId){
+			var row = courses.getRowByUID(uId);
+			var id = row.id;
+			if(confirm("确定删除选中记录？")){
+				$.ajax({
+					url : "../deleteCourse.action",
+					type : "post",
+					data : {
+						courIds : id
+					},
+					success : function(text) {
+	 					mini.alert(text,"提示信息",function(){
+	 						CloseWindow("ok");
+	 					})
+						courses.load();
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						mini.alert(jqXHR.responseText);
+					}
+				});
+			}
+		}
+		//批量删除
+		function del(){
+			var rows = courses.getSelecteds();
+			if(rows.length>0){
+				var courseId = [];
+				for(var i = 0; i < rows.length; i++){
+					var r = rows[i];
+					//alert(r.id);
+					courseId.push(r.id);
+				}
+				if(confirm("确定删除选中记录？")){
+					var courIds = courseId.join(",");
+					//alert(courseId);
+					$.ajax({
+						url : "../deleteCourse.action",
+						type : "post",
+						data : {
+							courIds : courIds
+						},
+						//grid.loading("操作中，请稍后......"),
+						success : function(text) {
+		 					mini.alert(text,"提示信息",function(){
+		 						CloseWindow("ok");
+		 					})
+							courses.load();
+						},
+						error : function(jqXHR, textStatus, errorThrown) {
+							mini.alert(jqXHR.responseText);
+						}
+					});
+				}
+			}
+			else{
+				alert("请选择一条记录");
+			}
+		}
+		function edit(uId){
+			var editCour = courses.getRowByUID(uId);
+			var id = editCour.id;
+			mini.open({
+				url : "editCourse.html", //页面地址
+				title : "修改课程信息", //标题
+				iconCls : "icon-edit", //标题图标
+				width : "650px", //宽度
+				height : "280px", //高度
+				allowResize : true, //允许尺寸调节
+				allowDrag : true, //允许拖拽位置
+				showCloseButton : true, //显示关闭按钮
+				//showMaxButton: Boolean,     //显示最大化按钮
+				showModal : true, //显示遮罩
+				onload: function () {
+                    var iframe = this.getIFrameEl();
+                    var data = { action: "edit",id:id};
+                    iframe.contentWindow.SetData(data);
+                    
+                },
+				ondestroy : function(action) { //弹出页面关闭前		
+					courses.load();
+					
+				}
+			});
+		}
+		function add(){
+			mini.open({
+				url : "addCourse.html", //页面地址
+				title : "新增课程信息", //标题
+				iconCls : "icon-add", //标题图标
+				width : "650px", //宽度
+				height : "300px", //高度
+				allowResize : true, //允许尺寸调节
+				allowDrag : true, //允许拖拽位置
+				showCloseButton : true, //显示关闭按钮
+				//showMaxButton: Boolean,     //显示最大化按钮
+				showModal : true, //显示遮罩
+				onload: function () {
+                    var iframe = this.getIFrameEl();
+                    var data = { action: "add"};
+                    iframe.contentWindow.SetData(data);
+                    
+                },
+				ondestroy : function(action) { //弹出页面关闭前		
+					//CloseWindow("ok");
+					courses.reload();
+				}
+			});
+		}
+		function CloseWindow(action) {
+			if (action == "close" && form.isChanged()) {
+				if (confirm("数据被修改了，是否先保存？")) {
+					return false;
+				}
+			}
+			if (window.CloseOwnerWindow)
+				return window.CloseOwnerWindow(action);
+			else
+				window.close();
+		}
+	</script>
+</html>
